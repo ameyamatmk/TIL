@@ -1,4 +1,6 @@
-# 学習メモ
+# Blazor を使用して Web アプリを構築する
+
+[Blazor ラーニング パスを使用して Web アプリを構築する - Training | Microsoft Learn](https://learn.microsoft.com/ja-jp/training/paths/build-web-apps-with-blazor/)
 
 ## Blazor を使用した Web 開発の概要
 
