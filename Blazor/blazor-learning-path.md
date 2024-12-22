@@ -714,7 +714,8 @@ Blazor レイアウトのコンポーネントは `LayoutComponentBase` クラ�
 ```
 
 Blazor レイアウトコンポーネントを使う側では `@layout` ディレクティブを追加する。  
-ファイル名を `_Imports.razor` とすると、フォルダー内の全てのコンポーネントに対して自動的に適用される。
+ファイル名を `_Imports.razor` とすると、フォルダー内の全てのコンポーネントに対して自動的に適用される？  
+Visual Studioのテンプレートの構造がまだ読み切れない
 
 ```cs
 @page "/FavoritePizzas/{favorite}"
@@ -729,3 +730,146 @@ Blazor レイアウトコンポーネントを使う側では `@layout` ディ�
     public string Favorite { get; set; }
 }
 ```
+
+## Blazor Web アプリでのフォームと検証の動作の向上
+
+### Blazor C#でイベント処理
+
+C# メソッドを BlazorディレクティブでDOMイベントにバインドする。  
+`@onkeydown`, `@onfocus`, `@onclick` など
+
+イベントハンドラメソッドは、追加のコンテキスト情報を受け取ることができる。  
+イベント情報が不要な場合はパラメータを省略できる。
+
+JavaScript で処理する場合と比べ、Blazor Server アプリではイベントハンドラはサーバー上で実行され、加えられた変更のみがブラウザで更新される。
+
+### イベントの非同期処理
+
+既定では Blazor イベントハンドラは同期的に動作する。  
+長時間実行される可能性がある場合は スレッドをブロックして応答が低下することがある。  
+これをかいひするため、 `async` キーワードを指定してイベントハンドラメソッドを非同期として宣言する。
+
+### フォーカスの設定
+
+`ElementReference.FocusAsync()` メソッドを使用すると、 `@ref` 属性で要素参照を指定した DOM 要素にフォーカスを設定する。  
+Async メソッドなので非同期処理で実装するのがよさそう。
+
+### インラインイベントハンドラ
+
+イベントハンドラとしてラムダ式による匿名関数を指定できる。  
+特に、追加のパラメータを指定する場合に役立つ。
+
+```cs
+@page "/counter"
+@inject IJSRuntime JS
+
+<h1>Counter</h1>
+<p id="currentCount">Current count: @currentCount</p>
+<button class="btn btn-primary" @onclick='mouseEvent => HandleClick(mouseEvent, "Hello")'>Click me</button>
+
+@code {
+  private int currentCount = 0;
+
+  // 通常の MouseEventArgs パラメータに追加の文字列パラメータを渡せるようにしている
+  private async Task HandleClick(MouseEventArgs e, string msg)
+  {
+    if (e.CtrlKey) // Ctrl key pressed as well
+    {
+      await JS.InvokeVoidAsync("alert", msg);
+      currentCount += 5;
+    }
+    else
+    {
+      currentCount++;
+    }
+  }
+}
+```
+
+### イベントのオーバーライド
+
+DOM の子要素の一部のイベントは、その親要素のイベントをトリガーできる。  
+既定のイベントを抑制したい場合は、イベントの `preventDefault` 属性を指定する。  
+抑制したい場合はイベントの `stopPropagation` 属性を指定する。
+
+```cs
+<div @onclick="HandleDivClick">
+  <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+  <input value=@data @onkeypress="ProcessKeyPress" @onkeypress:preventDefault 
+  <button class="btn btn-primary" @onclick="IncrementCount" @onclick:stopPropagation>Click me 2</button>
+</div>
+
+@code {
+  private async Task HandleDivClick()
+  {
+    await JS.InvokeVoidAsync("alert", "Div click");
+  }
+  private async Task ProcessKeyPress(KeyboardEventArgs e)
+  {
+    // Omitted for brevity
+  }
+  private int currentCount = 0;
+  private void IncrementCount(MouseEventArgs e)
+  {
+    // Omitted for brevity
+  }
+}
+```
+
+### EventCallback を使用してコンポーネント間でイベントを処理
+
+Blazor コンポーネントに `EventCallback` 型のパラメータでコールバックを追加できる。
+
+```cs
+@* TextDisplay component *@
+@using WebApplication.Data;
+
+<p>Enter text:</p>
+<input @onkeypress="HandleKeyPress" value="@data" />
+
+@code {
+  [Parameter]
+  public EventCallback<KeyTransformation> OnKeyPressCallback { get; set; }
+  private string data;
+  private async Task HandleKeyPress(KeyboardEventArgs e)
+  {
+    KeyTransformation t = new KeyTransformation() { Key = e.Key };
+    await OnKeyPressCallback.InvokeAsync(t);
+    data += t.TransformedKey;
+  }
+}
+```
+
+```cs
+namespace WebApplication.Data
+{
+  public class KeyTransformation
+  {
+    public string Key { get; set; }
+    public string TransformedKey { get; set; }
+  }
+}
+```
+
+`input` 要素の `@onkeypress` イベント内で、 `OnKeyPressCallback` コールバックを呼び出している。
+
+親コンポーネントでコールバックメソッドを指定する。
+
+```cs
+@page "/texttransformer"
+@using WebApplication.Data;
+
+<h1>Text Transformer - Parent</h1>
+<TextDisplay OnKeypressCallback="@TransformText" />
+
+@code {
+  private void TransformText(KeyTransformation k)
+  {
+    k.TransformedKey = k.Key.ToUpper();
+  }
+}
+```
+
+`TextDisplay` コンポーネントで表示する情報と、表示するための変換処理を分離することができる。
+
+コンポーネントを使用する場所によって、変換処理を切り替えたい場合に利用できるか。
