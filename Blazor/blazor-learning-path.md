@@ -1045,3 +1045,17 @@ async Task RemovePizzaConfirmation(Pizza removePizza)
 4. `OnParametersSet` / `OnParametersSetAsync` …… コンポーネントパラメータ値に依存する初期化タスクを実行する
 5. `OnAfterRender` / `OnAfterRenderAsync` …… JS 相互運用やレンダリングしたコンテンツへのアクセスが必要なタスクを実行する
 6. `Dispose` / `DisposeAsync` …… アンマネージリソースを解放する
+
+## Blazor を使用して再利用可能なコンポーネントを作成する
+
+Blazor 特有というより、.NET 共通の仕組み
+
+### Razor クラスライブラリ
+
+Razor コンポーネント、ページ、HTML、CSS、JavaScript、画像、その他静的Webコンテンツをまとめてクラスライブラリを作成できる。
+
+別のプロジェクトで参照することで、複数のアプリケーションでコンポーネントを共有、再利用できる。
+
+### ライブラリのパッケージ化
+
+NuGet パッケージにすると配布できるようになる。
