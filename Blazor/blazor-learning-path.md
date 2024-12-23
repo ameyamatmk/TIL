@@ -873,3 +873,105 @@ namespace WebApplication.Data
 `TextDisplay` コンポーネントで表示する情報と、表示するための変換処理を分離することができる。
 
 コンポーネントを使用する場所によって、変換処理を切り替えたい場合に利用できるか。
+
+### Blazor フォーム
+
+`EditForm` 要素でフォームを構築する。
+
+- データバインディングでデータオブジェクトのビューのように関連付ける
+  - 双方向バインディングになる。見かけはそんなに変わらない
+- 入力値の検証
+- `OnSubmit` イベントをキャプチャするイベントハンドラで送信ロジックを実行
+
+入力コントロール
+
+- `InputCheckbox`
+- `InputDate<TValue>`
+- `InputFile`
+- `InputRadio<TValue>`
+- `InputRadioGroup<TValue>`
+- `InputSelect<TValue>`
+- `InputText`
+- `InputTextArea`
+
+フォームの送信イベントは3つある
+
+- `OnValidSubmit` …… 検証に合格した場合にトリガー
+- `OnInvalidSubmit` …… 検証に失敗した場合にトリガー
+- `OnSubmit` …… 入力に関わらず送信されたらトリガー
+
+個別のフィールドで検証できる範囲は `OnValidSubmit` でよく、複数の値について検証するなど複雑な要件がある場合は `OnSubmit` イベントで実施する。
+
+### EditForm の検証オプション
+
+- モデルの各プロパティに対してデータの注釈を使用して、値が必要となるタイミングと形式を指定できる
+- `DataAnnotationValidator` コンポーネントを追加し、モデル注釈とユーザー入力値との照合を行う
+- `ValidationSummary` コンポーネントを追加し、検証メッセージを表示する
+- `ValidationMessage` コンポーネントを追加し、特定のプロパティの検証メッセージを表示する
+
+プロパティに修飾を追加し、検証制限を指定する。
+
+- `[Requred]` …… 必須
+- `[ValidationNever]` …… 検証に含まない
+- `[CreditCard]` …… クレジットカード番号
+- `[Compare]` …… 2つのプロパティが一致する
+- `[Phone]` …… 電話番号
+- `[RegularExpression]` …… 正規表現
+- `[StringLength]` …… 文字列長の最大値
+- `[Range]` …… 値の範囲
+- `[Url]` …… URL
+
+修飾の `ErrorMessage` 属性を追加すると、検証失敗時に表示するメッセージを指定する。
+
+検証メッセージを使用する場合
+
+- `EditForm` コンポーネント内の任意の場所に `DataAnnotationValidator` コンポーネントを追加する
+- メッセージを表示する場所で `ValidationSummary` コンポーネントを追加する
+- 入力値の検証メッセージを表示する場所に `ValidationMessae` コンポーネントを追加し、 `For` 属性でプロパティを関連付ける
+
+```HTML
+@page "/admin/createpizza"
+
+<h1>Add a new pizza</h1>
+
+<EditForm Model="@pizza">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <InputText id="name" @bind-Value="pizza.Name" />
+    <ValidationMessage For="@(() => pizza.Name)" />
+    
+    <InputText id="description" @bind-Value="pizza.Description" />
+    
+    <InputText id="chefemail" @bind-Value="pizza.ChefEmail" />
+    <ValidationMessage For="@(() => pizza.ChefEmail)" />
+    
+    <InputNumber id="price" @bind-Value="pizza.Price" />
+    <ValidationMessage For="@(() => pizza.Price)" />
+</EditForm>
+
+@code {
+    private Pizza pizza = new();
+}
+```
+
+```cs
+public class Pizza
+{
+    public int Id { get; set; }
+    
+    [Required(ErrorMessage = "You must set a name for your pizza.")]
+    public string Name { get; set; }
+    
+    public string Description { get; set; }
+    
+    [EmailAddress(ErrorMessage = "You must set a valid email address for the chef responsible for the pizza recipe.")]
+    public string ChefEmail { get; set;}
+    
+    [Required]
+    [Range(10.00, 25.00, ErrorMessage = "You must set a price between $10 and $25.")]
+    public decimal Price { get; set; }
+}
+```
+
+カスタム検証属性を作成するには、 `ValidationAttribute` クラスを継承したクラスを定義し、 `IsValid` メソッドを継承する。
