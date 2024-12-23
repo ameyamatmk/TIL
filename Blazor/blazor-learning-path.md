@@ -1035,8 +1035,6 @@ async Task RemovePizzaConfirmation(Pizza removePizza)
 
 ### コンポーネントライフサイクル
 
-![image](https://learn.microsoft.com/ja-jp/training/aspnetcore/blazor-build-rich-interactive-components/media/4-component-lifecycle.png)
-
 [参照](https://learn.microsoft.com/ja-jp/training/modules/blazor-build-rich-interactive-components/4-improve-app-interactivity-lifecycle-events)
 
 1. コンポーネントの作成
