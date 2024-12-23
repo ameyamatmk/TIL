@@ -1059,3 +1059,11 @@ Razor コンポーネント、ページ、HTML、CSS、JavaScript、画像、そ
 ### ライブラリのパッケージ化
 
 NuGet パッケージにすると配布できるようになる。
+
+## Blazor で四目並べゲームを構築する
+
+[blazor-learning-path/ConnectFour at main · ameyamatmk/blazor-learning-path](https://github.com/ameyamatmk/blazor-learning-path/tree/main/ConnectFour)
+
+`Board.razor` に対して `Board.razor.css` を適用する。
+
+交換を鳴らす課題で、JavaScriptを活用しようとしたが上手くいかない
