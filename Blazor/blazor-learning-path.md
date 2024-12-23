@@ -975,3 +975,73 @@ public class Pizza
 ```
 
 カスタム検証属性を作成するには、 `ValidationAttribute` クラスを継承したクラスを定義し、 `IsValid` メソッドを継承する。
+
+## Blazor Web アプリを使ってリッチな対話型コンポーネントを構築する
+
+### Blazor と JavaScript の相互運用性
+
+既存の JavaScript ライブラリ、再利用したい既存の JavaScript コードを利用したい場合、 .NET メソッドから JavaScript 関数を呼び出したり、その逆ができる。
+
+### .NET コードから JavaScript を呼び出す
+
+`IJSRuntime` インターフェースを使用する。  
+`@page` ディレクティブの後に、 `@inject IJSRuntime` を挿入する。
+
+```@cs
+@inject IJSRuntime JavaScript
+```
+
+`InvokeAsync<TValue>` と `InvokeVoidAsync` メソッドで JavaScript コードを呼び出す。  
+パラメータは呼び出す関数名と引数が続く。引数はJSONシリアライズ可能
+
+### サードパーティ JavaScript ライブラリを追加する
+
+`_Host.cshtml` ファイルの末尾の `<script src="_framework/blazor.server.js"></script>` の後ろ、 `</body>` の前にライブラリを含めるための `script` 要素を追加する。
+
+```html
+<body>
+  ...
+  <script src="_framework/blazor.server.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert@latest/dist/sweetalert.min.js"></script>
+</body>
+```
+
+`IJSRuntime.InvokeAsync` メソッドでJS関数を呼び出す。
+
+```cs
+@inject IJSRuntime JavaScript
+
+async Task RemovePizzaConfirmation(Pizza removePizza)
+{
+  var messageParams = new
+  {
+    title = "Remove Pizza?",
+    text = $"""Do you want to remove the "{removePizza.Special!.Name}" from your order?""",
+    icon = "warning",
+    buttons = new
+    {
+      abort = new { text = "No, leave it in my order", value = false },
+      confirm = new { text = "Yes, remove pizza", value = true }
+    },
+    dangerMode = true
+  };
+
+  if (await JavaScript.InvokeAsync<bool>("swal", messageParams))
+  {
+    OrderState.RemoveConfiguredPizza(removePizza);
+  }
+}
+```
+
+### コンポーネントライフサイクル
+
+![image](https://learn.microsoft.com/ja-jp/training/aspnetcore/blazor-build-rich-interactive-components/media/4-component-lifecycle.png)
+
+[参照](https://learn.microsoft.com/ja-jp/training/modules/blazor-build-rich-interactive-components/4-improve-app-interactivity-lifecycle-events)
+
+1. コンポーネントの作成
+2. `SetParametersAsync` …… パラメータの使用前の検証が必要な場合など。
+3. `OnInitialized` / `OnInitializedAsync` …… コストのかかる初期化タスクを実行する
+4. `OnParametersSet` / `OnParametersSetAsync` …… コンポーネントパラメータ値に依存する初期化タスクを実行する
+5. `OnAfterRender` / `OnAfterRenderAsync` …… JS 相互運用やレンダリングしたコンテンツへのアクセスが必要なタスクを実行する
+6. `Dispose` / `DisposeAsync` …… アンマネージリソースを解放する
